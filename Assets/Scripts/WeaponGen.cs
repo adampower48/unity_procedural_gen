@@ -94,9 +94,11 @@ public class SwordTemplate
     private float widthInner;
     private float heightInner;
 
-    public SwordTemplate()
-    {
+    public SwordTemplate() { }
 
+    public SwordTemplate(int seed)
+    {
+        System.Random rand = new System.Random(seed);
     }
 
     public Vector3[] GetVertices()
@@ -137,7 +139,7 @@ public class SwordTemplate
         {
             triangles[curIndex] = 1; // tip
             triangles[curIndex + 1] = i;
-            triangles[curIndex + 2] = Wrap(i + 1, 8, 14);
+            triangles[curIndex + 2] = Helpers.Wrap(i + 1, 8, 14);
             curIndex += 3;
         }
 
@@ -146,13 +148,13 @@ public class SwordTemplate
         {
             // triangle 1
             triangles[curIndex] = i;
-            triangles[curIndex + 1] = Wrap(i + 1, 2, 8);
+            triangles[curIndex + 1] = Helpers.Wrap(i + 1, 2, 8);
             triangles[curIndex + 2] = i + 6;
 
             // triangle 2
-            triangles[curIndex + 3] = Wrap(i + 1, 2, 8) + 6;
+            triangles[curIndex + 3] = Helpers.Wrap(i + 1, 2, 8) + 6;
             triangles[curIndex + 4] = i + 6;
-            triangles[curIndex + 5] = Wrap(i + 1, 2, 8);
+            triangles[curIndex + 5] = Helpers.Wrap(i + 1, 2, 8);
 
             curIndex += 6;
         }
@@ -160,9 +162,4 @@ public class SwordTemplate
         return triangles;
     }
 
-    public int Wrap(int val, int min, int max)
-    {
-        // min inclusive, max exclusive
-        return (val - min) % (max - min) + min;
-    }
 }
