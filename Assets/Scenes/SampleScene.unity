@@ -407,7 +407,13 @@ MonoBehaviour:
     depth: 0.19
     width: 0.66
     widthInnerRatio: 0.263
-    material: {fileID: 2100000, guid: 07bfe8df0303bd64baa816e4e3a82e79, type: 2}
+  mace:
+    height: 1
+    width: 1
+    depth: 1
+    spikeHeightRatio: 0.8
+    spikeWidthRatio: 0.8
+    spikeDepthRatio: 0.8
 --- !u!4 &561392150
 Transform:
   m_ObjectHideFlags: 0
@@ -621,7 +627,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1864908451}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &1864908453
 Camera:
   m_ObjectHideFlags: 0

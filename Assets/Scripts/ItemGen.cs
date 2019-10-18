@@ -10,8 +10,6 @@ public struct WeaponType
     public string name;
     public float attackSpeed;
     public int baseDamage;
-
-
 }
 
 [Serializable]
@@ -21,7 +19,6 @@ public struct DamageModifier
     public string suffixName;
     public string damageType;
     public int damage;
-
 }
 
 [Serializable]
@@ -31,7 +28,6 @@ public struct WeaponModifier
     public float attackSpeedMulti;
     public float baseDamageMulti;
 }
-
 
 
 public class ItemGen : MonoBehaviour
@@ -46,21 +42,19 @@ public class ItemGen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            Weapon weapon = GenerateRandomWeapon();
+            var weapon = GenerateRandomWeapon();
             Debug.Log("Weapon:" + weapon);
-
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
     }
 
-    public Weapon GenerateRandomWeapon(int seed=-1)
+    public Weapon GenerateRandomWeapon(int seed = -1)
     {
         if (seed != -1) Random.InitState(seed);
 
@@ -69,9 +63,9 @@ public class ItemGen : MonoBehaviour
         var type = weaponTypes[Random.Range(0, weaponTypes.Length)];
 
         // Modifiers
-        int numWeaponMods = Random.Range(0, Mathf.Min(maxNumWeaponModifiers, weaponModifers.Length + 1));
-        WeaponModifier[] weapMods = new WeaponModifier[numWeaponMods];
-        for (int i = 0; i < numWeaponMods; i++)
+        var numWeaponMods = Random.Range(0, Mathf.Min(maxNumWeaponModifiers, weaponModifers.Length + 1));
+        var weapMods = new WeaponModifier[numWeaponMods];
+        for (var i = 0; i < numWeaponMods; i++)
         {
             // todo: dont pick duplicates, dont pick opposites (eg dull + sharp), might need to iteratively reduce mod pool
             weapMods[i] = weaponModifers[Random.Range(0, weaponModifers.Length)];
@@ -79,44 +73,41 @@ public class ItemGen : MonoBehaviour
 
         return new Weapon(pre, suf, type, weapMods);
     }
-
-    
-
 }
 
 public class Weapon
 {
-    DamageModifier prefix;
-    DamageModifier suffix;
-    WeaponType type;
-    WeaponModifier[] extraModifiers;
+    DamageModifier _prefix;
+    DamageModifier _suffix;
+    WeaponType _type;
+    WeaponModifier[] _extraModifiers;
 
-    public Weapon(DamageModifier _prefix, DamageModifier _suffix, WeaponType _type, WeaponModifier[] _extraModifiers)
+    public Weapon(DamageModifier prefix, DamageModifier suffix, WeaponType type, WeaponModifier[] extraModifiers)
     {
-        prefix = _prefix;
-        suffix = _suffix;
-        type = _type;
-        extraModifiers = _extraModifiers;
+        _prefix = prefix;
+        _suffix = suffix;
+        _type = type;
+        _extraModifiers = extraModifiers;
     }
 
     public override string ToString()
     {
         // Name
-        string weapName = prefix.prefixName + " " + type.name + " " + suffix.suffixName;
+        var weapName = _prefix.prefixName + " " + _type.name + " " + _suffix.suffixName;
 
         // Weapon stats
-        string stats = String.Format("Speed: {0:F2}\nDPS: {1:F2}", GetAttackSpeed(), GetDPS());
+        var stats = String.Format("Speed: {0:F2}\nDPS: {1:F2}", GetAttackSpeed(), GetDps());
 
         // Damage types
-        string dtypeStr = "";
-        foreach(var entry in GetDamageByType())
+        var dtypeStr = "";
+        foreach (var entry in GetDamageByType())
         {
             dtypeStr += entry.Key + ": " + entry.Value + "\n";
         }
 
         // Modifiers
-        string mods = "Mods: ";
-        foreach (var mod in extraModifiers)
+        var mods = "Mods: ";
+        foreach (var mod in _extraModifiers)
         {
             mods += mod.name + " ";
         }
@@ -128,10 +119,10 @@ public class Weapon
     public float GetDamage()
     {
         // Damage per hit
-        return prefix.damage + GetBaseDamage() + suffix.damage;
+        return _prefix.damage + GetBaseDamage() + _suffix.damage;
     }
 
-    public float GetDPS()
+    public float GetDps()
     {
         // Damage per second
         return GetDamage() * GetAttackSpeed();
@@ -139,8 +130,8 @@ public class Weapon
 
     public float GetBaseDamage()
     {
-        float damage = type.baseDamage;
-        foreach (var mod in extraModifiers)
+        float damage = _type.baseDamage;
+        foreach (var mod in _extraModifiers)
         {
             damage *= mod.baseDamageMulti;
         }
@@ -150,8 +141,8 @@ public class Weapon
 
     public float GetAttackSpeed()
     {
-        float speed = type.attackSpeed;
-        foreach (var mod in extraModifiers)
+        var speed = _type.attackSpeed;
+        foreach (var mod in _extraModifiers)
         {
             speed *= mod.attackSpeedMulti;
         }
@@ -161,22 +152,21 @@ public class Weapon
 
     public Dictionary<string, float> GetDamageByType() // todo:
     {
-        Dictionary<string, float> damages = new Dictionary<string, float>();
+        var damages = new Dictionary<string, float>();
 
         // Weapon damage
-        string dtype = "Physcial";
+        var dtype = "Physcial";
         if (!damages.ContainsKey(dtype)) damages.Add(dtype, GetBaseDamage());
         else damages[dtype] += GetBaseDamage();
 
         // Pre/suffixes
-        dtype = prefix.damageType;
-        if (!damages.ContainsKey(dtype)) damages.Add(dtype, prefix.damage);
-        else damages[dtype] += prefix.damage;
+        dtype = _prefix.damageType;
+        if (!damages.ContainsKey(dtype)) damages.Add(dtype, _prefix.damage);
+        else damages[dtype] += _prefix.damage;
 
-        dtype = suffix.damageType;
-        if (!damages.ContainsKey(dtype)) damages.Add(dtype, suffix.damage);
-        else damages[dtype] += suffix.damage;
-
+        dtype = _suffix.damageType;
+        if (!damages.ContainsKey(dtype)) damages.Add(dtype, _suffix.damage);
+        else damages[dtype] += _suffix.damage;
 
 
         return damages;
