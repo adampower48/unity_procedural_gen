@@ -140,6 +140,7 @@ public class SwordTemplate : WeaponTemplate
 
     private const int NumFaces = 18;
 
+
     public SwordTemplate(int seed)
     {
         var rand = new System.Random(seed);
@@ -159,7 +160,7 @@ public class SwordTemplate : WeaponTemplate
 
         var leftInner = left * widthInnerRatio;
         var rightInner = right * widthInnerRatio;
-        var upInner = left * heightInnerRatio;
+        var upInner = up * heightInnerRatio;
 
 
         vertices[0] = Vector3.zero; // origin
@@ -170,7 +171,7 @@ public class SwordTemplate : WeaponTemplate
         vertices[3] = leftInner + forward;
         vertices[4] = rightInner + forward;
         vertices[5] = right;
-        vertices[6] = leftInner + back;
+        vertices[6] = rightInner + back;
         vertices[7] = leftInner + back;
 
         // Upper outline
