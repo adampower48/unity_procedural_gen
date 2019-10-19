@@ -30,20 +30,21 @@ public static class Helpers
 
     public static MeshInfo FixMesh(Vector3[] verts, int[] tris)
     {
-        // Slit faces using the same vertices so they are independent.
+        // Split faces using the same vertices so they are independent.
+
+        var newVerts = new List<Vector3>(verts);
+        var newTris = (int[]) tris.Clone();
 
         var triSet = new HashSet<int>();
-        var vertices = new List<Vector3>(verts);
-
-        for (var i = 0; i < tris.Length; i++)
+        for (var i = 0; i < newTris.Length; i++)
         {
-            var tri = tris[i];
+            var tri = newTris[i];
             if (triSet.Contains(tri))
             {
                 // Create new vert at same location
-                vertices.Add(verts[tri]);
+                newVerts.Add(verts[tri]);
                 // Change triangle to use new vert
-                tris[i] = vertices.Count - 1;
+                newTris[i] = newVerts.Count - 1;
             }
             else
             {
@@ -53,8 +54,8 @@ public static class Helpers
 
         return new MeshInfo
         {
-            vertices = vertices.ToArray(),
-            triangles = tris
+            vertices = newVerts.ToArray(),
+            triangles = newTris
         };
     }
 }

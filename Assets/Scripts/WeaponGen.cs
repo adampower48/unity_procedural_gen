@@ -32,24 +32,23 @@ public class WeaponGen : MonoBehaviour
         _swordGo = sword.CreateObject();
         _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
         _points = sword.DrawPoints(point, _swordGo);
-        
-        
+
+
         _maceGo = mace.CreateObject();
         _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
         _points2 = mace.DrawPoints(point, _maceGo);
 
         _maceGo.transform.position += Vector3.right * 2;
-
     }
 
     // Update is called once per frame
     void Update()
     {
         sword.UpdateMesh(_swordMesh);
-        sword.UpdatePoints(_points, _swordMesh.vertices);
-        
+        sword.UpdatePoints(_points);
+
         mace.UpdateMesh(_maceMesh);
-        mace.UpdatePoints(_points2, _maceMesh.vertices);
+        mace.UpdatePoints(_points2);
     }
 }
 
@@ -59,15 +58,18 @@ public abstract class WeaponTemplate
     public abstract Material Material { get; }
     public abstract string Name { get; }
 
+    public Vector3[] compactVertices;
+    public int[] compactTriangles;
+
     public abstract Vector3[] GetVertices();
 
     public abstract int[] GetTriangles();
 
     public virtual GameObject CreateObject()
     {
-        var triangles = GetTriangles();
-        var vertices = GetVertices();
-        var meshInfo = Helpers.FixMesh(vertices, triangles);
+        compactTriangles = GetTriangles();
+        compactVertices = GetVertices();
+        var meshInfo = Helpers.FixMesh(compactVertices, compactTriangles);
 
         // Create mesh
         var mesh = new Mesh
@@ -89,11 +91,9 @@ public abstract class WeaponTemplate
 
     public virtual void UpdateMesh(Mesh mesh)
     {
-        var vertices = GetVertices();
-        var triangles = GetTriangles();
-        var meshInfo = Helpers.FixMesh(vertices, triangles);
+        compactVertices = GetVertices();
+        var meshInfo = Helpers.FixMesh(compactVertices, compactTriangles);
 
-//        var triangles = mesh.triangles;
         mesh.Clear();
         mesh.vertices = meshInfo.vertices;
         mesh.triangles = meshInfo.triangles;
@@ -102,10 +102,9 @@ public abstract class WeaponTemplate
 
     public virtual GameObject[] DrawPoints(GameObject point, GameObject parent)
     {
-        var vertices = parent.GetComponent<MeshFilter>().mesh.vertices;
-        var points = new GameObject[vertices.Length];
+        var points = new GameObject[compactVertices.Length];
         var i = 0;
-        foreach (var vertex in vertices)
+        foreach (var vertex in compactVertices)
         {
             var obj = Object.Instantiate(point, vertex, Quaternion.identity);
             points[i] = obj;
@@ -117,10 +116,10 @@ public abstract class WeaponTemplate
         return points;
     }
 
-    public virtual void UpdatePoints(GameObject[] points, Vector3[] vertices)
+    public virtual void UpdatePoints(GameObject[] points)
     {
-        for (var i = 0; i < vertices.Length; i++)
-            points[i].transform.localPosition = vertices[i];
+        for (var i = 0; i < compactVertices.Length; i++)
+            points[i].transform.localPosition = compactVertices[i];
     }
 }
 
@@ -140,46 +139,43 @@ public class SwordTemplate : WeaponTemplate
     public override string Name => "Sword";
 
     private const int NumFaces = 18;
-    private float _widthInner;
-    private float _heightInner;
-
-    public SwordTemplate()
-    {
-    }
 
     public SwordTemplate(int seed)
     {
         var rand = new System.Random(seed);
         // todo: derive dimensions from seed
-        
-        
     }
 
     public override Vector3[] GetVertices()
     {
-        _widthInner = width * widthInnerRatio;
-        _heightInner = height * heightInnerRatio;
-
-
         var vertices = new Vector3[14];
+
+        // "Unit" vectors
+        var left = Vector3.left * (width / 2);
+        var right = Vector3.right * (width / 2);
+        var forward = Vector3.forward * (depth / 2);
+        var back = Vector3.back * (depth / 2);
+        var up = Vector3.up * height;
+
+        var leftInner = left * widthInnerRatio;
+        var rightInner = right * widthInnerRatio;
+        var upInner = left * heightInnerRatio;
+
+
         vertices[0] = Vector3.zero; // origin
-        vertices[1] = Vector3.up * height; // tip
+        vertices[1] = up; // tip
 
         // Lower outline
-        var left = Vector3.left * (width / 2);
-        var forward = Vector3.forward * (depth / 2);
-
-        vertices[2] = left; // left
-        vertices[3] = left * _widthInner + forward; // left forward
-        vertices[4] = -left * _widthInner + forward; // right forward
-        vertices[5] = -left; // right
-        vertices[6] = -left * _widthInner - forward; // right backward
-        vertices[7] = left * _widthInner - forward; // left backward
+        vertices[2] = left;
+        vertices[3] = leftInner + forward;
+        vertices[4] = rightInner + forward;
+        vertices[5] = right;
+        vertices[6] = leftInner + back;
+        vertices[7] = leftInner + back;
 
         // Upper outline
-        var up = Vector3.up * _heightInner;
         for (var i = 2; i < 8; i++)
-            vertices[i + 6] = vertices[i] + up;
+            vertices[i + 6] = vertices[i] + upInner;
 
         return vertices;
     }
@@ -228,12 +224,7 @@ public class MaceTemplate : WeaponTemplate
     public float spikeWidthRatio;
     public float spikeDepthRatio;
 
-
-    private float _heightInner;
-    private float _widthInner;
-    private float _depthInner;
     private const int NumFaces = 30;
-
 
     public Material defaultMaterial;
 
@@ -242,33 +233,42 @@ public class MaceTemplate : WeaponTemplate
 
     public override Vector3[] GetVertices()
     {
-        _heightInner = height * spikeHeightRatio;
-        _widthInner = width * spikeWidthRatio;
-        _depthInner = depth * spikeDepthRatio;
-
         var vertices = new Vector3[14];
+
+        // "Unit" Vectors
+        var left = Vector3.left * (width / 2);
+        var right = Vector3.right * (width / 2);
+        var forward = Vector3.forward * (depth / 2);
+        var back = Vector3.back * (depth / 2);
+        var up = Vector3.up * height;
+
+        var leftInner = left * spikeWidthRatio;
+        var rightInner = right * spikeWidthRatio;
+        var forwardInner = forward * spikeDepthRatio;
+        var backInner = back * spikeDepthRatio;
+        var upInner = up * spikeHeightRatio;
 
         // Origin
         vertices[0] = Vector3.zero;
 
         // Inner box base
-        vertices[1] = Vector3.forward * (_depthInner / 2) + Vector3.left * (_widthInner / 2);
-        vertices[2] = Vector3.forward * (_depthInner / 2) + Vector3.right * (_widthInner / 2);
-        vertices[3] = Vector3.back * (_depthInner / 2) + Vector3.right * (_widthInner / 2);
-        vertices[4] = Vector3.back * (_depthInner / 2) + Vector3.left * (_widthInner / 2);
+        vertices[1] = leftInner + forwardInner;
+        vertices[2] = rightInner + forwardInner;
+        vertices[3] = rightInner + backInner;
+        vertices[4] = leftInner + backInner;
 
         // Inner box top
         for (var i = 0; i < 4; i++)
         {
-            vertices[i + 5] = vertices[i + 1] + Vector3.up * _heightInner;
+            vertices[i + 5] = vertices[i + 1] + upInner;
         }
 
         // Spike tips
-        vertices[9] = Vector3.left * (width / 2) + Vector3.up * (_heightInner / 2);
-        vertices[10] = Vector3.forward * (depth / 2) + Vector3.up * (_heightInner / 2);
-        vertices[11] = Vector3.right * (width / 2) + Vector3.up * (_heightInner / 2);
-        vertices[12] = Vector3.back * (depth / 2) + Vector3.up * (_heightInner / 2);
-        vertices[13] = Vector3.up * height;
+        vertices[9] = left + upInner / 2;
+        vertices[10] = forward + upInner / 2;
+        vertices[11] = right + upInner / 2;
+        vertices[12] = back + upInner / 2;
+        vertices[13] = up;
 
         return vertices;
     }
