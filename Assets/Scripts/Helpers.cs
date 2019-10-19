@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,6 +23,21 @@ public static class Helpers
         return (val - min) % (max - min) + min;
     }
 
+    public static int Clip(int val, int min, int max)
+    {
+        if (val < min) return min;
+        if (val > max) return max;
+        return val;
+    }
+    
+    public static float Clip(float val, float min, float max)
+    {
+        if (val < min) return min;
+        if (val > max) return max;
+        return val;
+    }
+    
+    
     public struct MeshInfo
     {
         public Vector3[] vertices;
@@ -57,5 +73,49 @@ public static class Helpers
             vertices = newVerts.ToArray(),
             triangles = newTris
         };
+    }
+}
+
+public class HelperRandom
+{
+    private System.Random _rand;
+
+    public HelperRandom()
+    {
+        _rand = new System.Random();
+    }
+
+    public HelperRandom(int seed)
+    {
+        _rand = new System.Random(seed);
+    }
+
+    public void SetSeed(int seed)
+    {
+        _rand = new System.Random(seed);
+    }
+
+    public float FloatRange(float min, float max)
+    {
+        return (float) _rand.NextDouble() * (max - min) + min;
+    }
+
+    public int IntRange(int min, int max)
+    {
+        return (int) _rand.NextDouble() * (max - min) + min;
+    }
+
+    public double NormalValue(float mean, float std)
+    {
+        // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+
+        var u1 = _rand.NextDouble();
+        var u2 = _rand.NextDouble();
+
+        // Basic form
+        var z1 = Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2);
+//        var z2 = Math.Sqrt(-2 * Math.Log(u1)) * Math.Sin(2 * Math.PI * u2); // Second value can be generated
+        
+        return z1 * std + mean;
     }
 }
