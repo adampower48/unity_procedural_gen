@@ -29,15 +29,21 @@ public static class Helpers
         if (val > max) return max;
         return val;
     }
-    
+
     public static float Clip(float val, float min, float max)
     {
         if (val < min) return min;
         if (val > max) return max;
         return val;
     }
-    
-    
+
+    public static double Clip(double val, double min, double max)
+    {
+        if (val < min) return min;
+        if (val > max) return max;
+        return val;
+    }
+
     public struct MeshInfo
     {
         public Vector3[] vertices;
@@ -105,7 +111,7 @@ public class HelperRandom
         return (int) _rand.NextDouble() * (max - min) + min;
     }
 
-    public double NormalValue(float mean, float std)
+    public double NormalValue(double mean, double std)
     {
         // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
 
@@ -118,4 +124,18 @@ public class HelperRandom
         
         return z1 * std + mean;
     }
+
+    public double NormalValue(NormalRange range)
+    {
+        return Helpers.Clip(NormalValue(range.mean, range.std), range.min, range.max);
+    }
+}
+
+[Serializable]
+public struct NormalRange
+{
+    public double min;
+    public double max;
+    public double mean;
+    [Min(0)] public double std;
 }
