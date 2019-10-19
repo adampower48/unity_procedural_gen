@@ -26,15 +26,19 @@ public class WeaponGen : MonoBehaviour
     private WeaponTemplate[] _weapons;
     private Mesh[] _weaponMeshes;
 
+    public int weaponSeed;
+
 
     // Start is called before the first frame update
     void Start()
     {
+        sword.SetDimensionsSeed(weaponSeed);
         _swordGo = sword.CreateObject();
         _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
         _points = sword.DrawPoints(point, _swordGo);
 
 
+        mace.SetDimensionsSeed(weaponSeed);
         _maceGo = mace.CreateObject();
         _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
         _points2 = mace.DrawPoints(point, _maceGo);
@@ -45,9 +49,11 @@ public class WeaponGen : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        sword.SetDimensionsSeed(weaponSeed);
         sword.UpdateMesh(_swordMesh);
         sword.UpdatePoints(_points);
 
+        mace.SetDimensionsSeed(weaponSeed);
         mace.UpdateMesh(_maceMesh);
         mace.UpdatePoints(_points2);
     }
@@ -65,6 +71,8 @@ public abstract class WeaponTemplate
     public abstract Vector3[] GetVertices();
 
     public abstract int[] GetTriangles();
+
+    public abstract void SetDimensionsSeed(int seed);
 
     public virtual GameObject CreateObject()
     {
@@ -127,10 +135,14 @@ public abstract class WeaponTemplate
 [Serializable]
 public class SwordTemplate : WeaponTemplate
 {
-    [Range(0, 10)] public float height;
+    public NormalRange height;
+    public NormalRange width;
+    public NormalRange depth;
+
+    private float _height;
+    private float _depth;
+    private float _width;
     [Range(0, 1)] public float heightInnerRatio;
-    [Range(0, 10)] public float depth;
-    [Range(0, 10)] public float width;
     [Range(0, 1)] public float widthInnerRatio;
 
     public Material defaultMaterial;
@@ -144,11 +156,17 @@ public class SwordTemplate : WeaponTemplate
 
     public SwordTemplate(int seed)
     {
+        SetDimensionsSeed(seed);
+    }
+
+    public override void SetDimensionsSeed(int seed)
+    {
+        // Generate weapon dimensions from a seed
         var rand = new HelperRandom(seed);
-        
-        height = rand.FloatRange(0, 10);
-        depth = rand.FloatRange(0, 10);
-        width = rand.FloatRange(0, 10);
+
+        _height = (float) rand.NormalValue(height);
+        _width = (float) rand.NormalValue(width);
+        _depth = (float) rand.NormalValue(depth);
         heightInnerRatio = rand.FloatRange(0, 1);
         widthInnerRatio = rand.FloatRange(0, 1);
     }
@@ -158,11 +176,11 @@ public class SwordTemplate : WeaponTemplate
         var vertices = new Vector3[14];
 
         // "Unit" vectors
-        var left = Vector3.left * (width / 2);
-        var right = Vector3.right * (width / 2);
-        var forward = Vector3.forward * (depth / 2);
-        var back = Vector3.back * (depth / 2);
-        var up = Vector3.up * height;
+        var left = Vector3.left * (_width / 2);
+        var right = Vector3.right * (_width / 2);
+        var forward = Vector3.forward * (_depth / 2);
+        var back = Vector3.back * (_depth / 2);
+        var up = Vector3.up * _height;
 
         var leftInner = left * widthInnerRatio;
         var rightInner = right * widthInnerRatio;
@@ -224,9 +242,14 @@ public class SwordTemplate : WeaponTemplate
 [Serializable]
 public class MaceTemplate : WeaponTemplate
 {
-    public float height;
-    public float width;
-    public float depth;
+    public NormalRange height;
+    public NormalRange width;
+    public NormalRange depth;
+    
+    
+    private float _height;
+    private float _width;
+    private float _depth;
     public float spikeHeightRatio;
     public float spikeWidthRatio;
     public float spikeDepthRatio;
@@ -243,11 +266,11 @@ public class MaceTemplate : WeaponTemplate
         var vertices = new Vector3[14];
 
         // "Unit" Vectors
-        var left = Vector3.left * (width / 2);
-        var right = Vector3.right * (width / 2);
-        var forward = Vector3.forward * (depth / 2);
-        var back = Vector3.back * (depth / 2);
-        var up = Vector3.up * height;
+        var left = Vector3.left * (_width / 2);
+        var right = Vector3.right * (_width / 2);
+        var forward = Vector3.forward * (_depth / 2);
+        var back = Vector3.back * (_depth / 2);
+        var up = Vector3.up * _height;
 
         var leftInner = left * spikeWidthRatio;
         var rightInner = right * spikeWidthRatio;
@@ -330,5 +353,17 @@ public class MaceTemplate : WeaponTemplate
 
 
         return triangles;
+    }
+
+    public override void SetDimensionsSeed(int seed)
+    {
+        // Generate weapon dimensions from a seed
+        var rand = new HelperRandom(seed);
+        _height = (float) rand.NormalValue(height);
+        _width = (float) rand.NormalValue(width);
+        _depth = (float) rand.NormalValue(depth);
+        spikeHeightRatio = rand.FloatRange(0.2f, 1);
+        spikeWidthRatio = rand.FloatRange(0.2f, 1);
+        spikeDepthRatio = rand.FloatRange(0.2f, 1);
     }
 }
