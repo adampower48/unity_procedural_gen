@@ -6,6 +6,7 @@ using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 [Serializable]
 public class WeaponGen : MonoBehaviour
@@ -58,8 +59,8 @@ public abstract class WeaponTemplate
     public abstract Material Material { get; }
     public abstract string Name { get; }
 
-    public Vector3[] compactVertices;
-    public int[] compactTriangles;
+    private Vector3[] _compactVertices;
+    private int[] _compactTriangles;
 
     public abstract Vector3[] GetVertices();
 
@@ -67,9 +68,9 @@ public abstract class WeaponTemplate
 
     public virtual GameObject CreateObject()
     {
-        compactTriangles = GetTriangles();
-        compactVertices = GetVertices();
-        var meshInfo = Helpers.FixMesh(compactVertices, compactTriangles);
+        _compactTriangles = GetTriangles();
+        _compactVertices = GetVertices();
+        var meshInfo = Helpers.FixMesh(_compactVertices, _compactTriangles);
 
         // Create mesh
         var mesh = new Mesh
@@ -91,8 +92,8 @@ public abstract class WeaponTemplate
 
     public virtual void UpdateMesh(Mesh mesh)
     {
-        compactVertices = GetVertices();
-        var meshInfo = Helpers.FixMesh(compactVertices, compactTriangles);
+        _compactVertices = GetVertices();
+        var meshInfo = Helpers.FixMesh(_compactVertices, _compactTriangles);
 
         mesh.Clear();
         mesh.vertices = meshInfo.vertices;
@@ -102,9 +103,9 @@ public abstract class WeaponTemplate
 
     public virtual GameObject[] DrawPoints(GameObject point, GameObject parent)
     {
-        var points = new GameObject[compactVertices.Length];
+        var points = new GameObject[_compactVertices.Length];
         var i = 0;
-        foreach (var vertex in compactVertices)
+        foreach (var vertex in _compactVertices)
         {
             var obj = Object.Instantiate(point, vertex, Quaternion.identity);
             points[i] = obj;
@@ -118,8 +119,8 @@ public abstract class WeaponTemplate
 
     public virtual void UpdatePoints(GameObject[] points)
     {
-        for (var i = 0; i < compactVertices.Length; i++)
-            points[i].transform.localPosition = compactVertices[i];
+        for (var i = 0; i < _compactVertices.Length; i++)
+            points[i].transform.localPosition = _compactVertices[i];
     }
 }
 
@@ -143,8 +144,13 @@ public class SwordTemplate : WeaponTemplate
 
     public SwordTemplate(int seed)
     {
-        var rand = new System.Random(seed);
-        // todo: derive dimensions from seed
+        var rand = new HelperRandom(seed);
+        
+        height = rand.FloatRange(0, 10);
+        depth = rand.FloatRange(0, 10);
+        width = rand.FloatRange(0, 10);
+        heightInnerRatio = rand.FloatRange(0, 1);
+        widthInnerRatio = rand.FloatRange(0, 1);
     }
 
     public override Vector3[] GetVertices()
