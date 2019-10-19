@@ -34,7 +34,7 @@ public class ItemGen : MonoBehaviour
 {
     public DamageModifier[] damageModifiers;
     public WeaponType[] weaponTypes;
-    public WeaponModifier[] weaponModifers;
+    public WeaponModifier[] weaponModifiers;
 
     public int maxNumWeaponModifiers;
 
@@ -63,12 +63,12 @@ public class ItemGen : MonoBehaviour
         var type = weaponTypes[Random.Range(0, weaponTypes.Length)];
 
         // Modifiers
-        var numWeaponMods = Random.Range(0, Mathf.Min(maxNumWeaponModifiers, weaponModifers.Length + 1));
+        var numWeaponMods = Random.Range(0, Mathf.Min(maxNumWeaponModifiers, weaponModifiers.Length + 1));
         var weapMods = new WeaponModifier[numWeaponMods];
         for (var i = 0; i < numWeaponMods; i++)
         {
             // todo: dont pick duplicates, dont pick opposites (eg dull + sharp), might need to iteratively reduce mod pool
-            weapMods[i] = weaponModifers[Random.Range(0, weaponModifers.Length)];
+            weapMods[i] = weaponModifiers[Random.Range(0, weaponModifiers.Length)];
         }
 
         return new Weapon(pre, suf, type, weapMods);
