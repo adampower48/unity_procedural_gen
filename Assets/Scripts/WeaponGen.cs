@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -11,12 +12,15 @@ public class WeaponGen : MonoBehaviour
 {
     public GameObject point;
     private GameObject[] _points;
+    private GameObject[] _points2;
 
     public SwordTemplate sword;
     private GameObject _swordGo;
     private Mesh _swordMesh;
 
     public MaceTemplate mace;
+    private GameObject _maceGo;
+    private Mesh _maceMesh;
 
     private WeaponTemplate[] _weapons;
     private Mesh[] _weaponMeshes;
@@ -28,12 +32,14 @@ public class WeaponGen : MonoBehaviour
         _swordGo = sword.CreateObject();
         _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
         _points = sword.DrawPoints(point, _swordGo);
+        
+        
+        _maceGo = mace.CreateObject();
+        _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
+        _points2 = mace.DrawPoints(point, _maceGo);
 
+        _maceGo.transform.position += Vector3.right * 2;
 
-        foreach (var vertex in sword.GetTriangles())
-        {
-            Debug.Log(vertex);
-        }
     }
 
     // Update is called once per frame
@@ -41,6 +47,9 @@ public class WeaponGen : MonoBehaviour
     {
         sword.UpdateMesh(_swordMesh);
         sword.UpdatePoints(_points, _swordMesh.vertices);
+        
+        mace.UpdateMesh(_maceMesh);
+        mace.UpdatePoints(_points2, _maceMesh.vertices);
     }
 }
 
@@ -58,12 +67,13 @@ public abstract class WeaponTemplate
     {
         var triangles = GetTriangles();
         var vertices = GetVertices();
+        var meshInfo = Helpers.FixMesh(vertices, triangles);
 
         // Create mesh
         var mesh = new Mesh
         {
-            vertices = vertices,
-            triangles = triangles
+            vertices = meshInfo.vertices,
+            triangles = meshInfo.triangles
         };
         mesh.RecalculateNormals();
 
@@ -80,16 +90,19 @@ public abstract class WeaponTemplate
     public virtual void UpdateMesh(Mesh mesh)
     {
         var vertices = GetVertices();
-        var triangles = mesh.triangles;
+        var triangles = GetTriangles();
+        var meshInfo = Helpers.FixMesh(vertices, triangles);
+
+//        var triangles = mesh.triangles;
         mesh.Clear();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        mesh.vertices = meshInfo.vertices;
+        mesh.triangles = meshInfo.triangles;
         mesh.RecalculateNormals();
     }
 
     public virtual GameObject[] DrawPoints(GameObject point, GameObject parent)
     {
-        var vertices = GetVertices();
+        var vertices = parent.GetComponent<MeshFilter>().mesh.vertices;
         var points = new GameObject[vertices.Length];
         var i = 0;
         foreach (var vertex in vertices)
@@ -107,7 +120,7 @@ public abstract class WeaponTemplate
     public virtual void UpdatePoints(GameObject[] points, Vector3[] vertices)
     {
         for (var i = 0; i < vertices.Length; i++)
-            points[i].transform.position = vertices[i];
+            points[i].transform.localPosition = vertices[i];
     }
 }
 
@@ -138,6 +151,8 @@ public class SwordTemplate : WeaponTemplate
     {
         var rand = new System.Random(seed);
         // todo: derive dimensions from seed
+        
+        
     }
 
     public override Vector3[] GetVertices()
@@ -229,7 +244,7 @@ public class MaceTemplate : WeaponTemplate
     {
         _heightInner = height * spikeHeightRatio;
         _widthInner = width * spikeWidthRatio;
-        _depthInner = width * spikeDepthRatio;
+        _depthInner = depth * spikeDepthRatio;
 
         var vertices = new Vector3[14];
 
@@ -243,16 +258,16 @@ public class MaceTemplate : WeaponTemplate
         vertices[4] = Vector3.back * (_depthInner / 2) + Vector3.left * (_widthInner / 2);
 
         // Inner box top
-        for (var i = 1; i < 5; i++)
+        for (var i = 0; i < 4; i++)
         {
-            vertices[i + 4] = vertices[i] + Vector3.up * _heightInner;
+            vertices[i + 5] = vertices[i + 1] + Vector3.up * _heightInner;
         }
 
         // Spike tips
         vertices[9] = Vector3.left * (width / 2) + Vector3.up * (_heightInner / 2);
         vertices[10] = Vector3.forward * (depth / 2) + Vector3.up * (_heightInner / 2);
         vertices[11] = Vector3.right * (width / 2) + Vector3.up * (_heightInner / 2);
-        vertices[12] = Vector3.back * (width / 2) + Vector3.up * (_heightInner / 2);
+        vertices[12] = Vector3.back * (depth / 2) + Vector3.up * (_heightInner / 2);
         vertices[13] = Vector3.up * height;
 
         return vertices;
@@ -267,8 +282,8 @@ public class MaceTemplate : WeaponTemplate
         for (var i = 0; i < 4; i++)
         {
             triangles[curIndex] = 0;
-            triangles[curIndex + 1] = i;
-            triangles[curIndex + 2] = Helpers.Wrap(i + 1, 1, 4);
+            triangles[curIndex + 2] = i + 1;
+            triangles[curIndex + 1] = Helpers.Wrap(i + 2, 1, 5);
             curIndex += 3;
         }
 
@@ -278,18 +293,21 @@ public class MaceTemplate : WeaponTemplate
             // Get corners for this side
             var offsets = new int[]
             {
-                i,
-                i + 4,
-                Helpers.Wrap(i + 5, 4, 8),
-                Helpers.Wrap(i + 1, 0, 1),
+                i + 1,
+                i + 5,
+                Helpers.Wrap(i + 6, 5, 9),
+                Helpers.Wrap(i + 2, 1, 5),
             };
+
+//            var str = offsets.Aggregate("", (current, ind) => current + (ind + " "));
+//            Debug.Log(str);
 
             // Create faces for this side
             for (var j = 0; j < 4; j++)
             {
-                triangles[curIndex] = 9 + j;
-                triangles[curIndex + 1] = offsets[j];
-                triangles[curIndex + 2] = offsets[Helpers.Wrap(j + 1, 0, 4)];
+                triangles[curIndex] = Helpers.Wrap(10 + i, 9, 13);
+                triangles[curIndex + 1] = offsets[Helpers.Wrap(j + 1, 0, 4)];
+                triangles[curIndex + 2] = offsets[j];
                 curIndex += 3;
             }
         }
@@ -298,8 +316,8 @@ public class MaceTemplate : WeaponTemplate
         for (var i = 0; i < 4; i++)
         {
             triangles[curIndex] = 13;
-            triangles[curIndex + 1] = i + 4;
-            triangles[curIndex + 2] = Helpers.Wrap(i + 5, 4, 8);
+            triangles[curIndex + 1] = i + 5;
+            triangles[curIndex + 2] = Helpers.Wrap(i + 6, 5, 9);
             curIndex += 3;
         }
 
