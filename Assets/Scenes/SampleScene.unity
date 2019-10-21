@@ -198,7 +198,10 @@ MonoBehaviour:
   - name: Slingshot
     attackSpeed: 1.3
     baseDamage: 5
-  weaponModifiers: []
+  weaponModifiers:
+  - name: 
+    attackSpeedMulti: 0
+    baseDamageMulti: 0
   maxNumWeaponModifiers: 4
 --- !u!4 &181566325
 Transform:
@@ -405,8 +408,16 @@ MonoBehaviour:
       max: 0.25
       mean: 0.15
       std: 0.05
-    heightInnerRatio: 0
-    widthInnerRatio: 0
+    heightInnerRatio:
+      min: 0
+      max: 1
+      mean: 0.75
+      std: 0.1
+    depthInnerRatio:
+      min: 0
+      max: 1
+      mean: 0.5
+      std: 0.2
     defaultMaterial: {fileID: 2100000, guid: 07bfe8df0303bd64baa816e4e3a82e79, type: 2}
   mace:
     height:
@@ -424,11 +435,34 @@ MonoBehaviour:
       max: 1.5
       mean: 1
       std: 0.25
-    spikeHeightRatio: 0.7
-    spikeWidthRatio: 0.7
-    spikeDepthRatio: 0.7
+    spikeHeightRatio:
+      min: 0
+      max: 1
+      mean: 0.5
+      std: 0.2
+    spikeWidthRatio:
+      min: 0
+      max: 1
+      mean: 0.5
+      std: 0.2
+    spikeDepthRatio:
+      min: 0
+      max: 1
+      mean: 0.5
+      std: 0.2
     defaultMaterial: {fileID: 2100000, guid: 07bfe8df0303bd64baa816e4e3a82e79, type: 2}
-  swordSeed: 0
+  weaponSeed: 0
+  dimensionModifiers:
+  - name: Heavy
+    scale: 2
+    heightScale: 1
+    widthScale: 1
+    depthScale: 1
+  - name: Light
+    scale: 0.5
+    heightScale: 1
+    widthScale: 1
+    depthScale: 1
 --- !u!4 &561392150
 Transform:
   m_ObjectHideFlags: 0

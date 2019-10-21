@@ -12,60 +12,53 @@ using Random = UnityEngine.Random;
 public class WeaponGen : MonoBehaviour
 {
     public GameObject point;
-    private GameObject[] _points;
-    private GameObject[] _points2;
 
     public SwordTemplate sword;
-    private GameObject _swordGo;
-    private Mesh _swordMesh;
-
     public MaceTemplate mace;
-    private GameObject _maceGo;
-    private Mesh _maceMesh;
 
     private GameObject[] _weapons;
     private Mesh[] _weaponMeshes;
 
     public int weaponSeed;
-
+    public DimensionModifier[] dimensionModifiers;
 
     // Start is called before the first frame update
     void Start()
     {
         // Create 5x5 grid of weapons
         _weapons = new GameObject[25];
-        for (int i = 0; i < _weapons.Length; i++)
+        _weaponMeshes = new Mesh[25];
+        for (var i = 0; i < _weapons.Length; i++)
         {
-            mace.SetDimensionsSeed(weaponSeed + i);
+            sword.SetDimensionsSeed(weaponSeed + i);
+            sword.UpdateDimensionsMods(dimensionModifiers);
             var pos = (i % 5) * 2 * Vector3.right + (i / 5) * 2 * Vector3.forward;
-            _weapons[i] = mace.CreateObject(pos);
+            _weapons[i] = sword.CreateObject(pos);
+            _weaponMeshes[i] = _weapons[i].GetComponent<MeshFilter>().mesh;
         }
-
-//        sword.SetDimensionsSeed(weaponSeed);
-//        _swordGo = sword.CreateObject();
-//        _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
-//        _points = sword.DrawPoints(point, _swordGo);
-//
-//
-//        mace.SetDimensionsSeed(weaponSeed);
-//        _maceGo = mace.CreateObject();
-//        _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
-//        _points2 = mace.DrawPoints(point, _maceGo);
-//
-//        _maceGo.transform.position += Vector3.right * 2;
     }
 
     // Update is called once per frame
     void Update()
     {
-//        sword.SetDimensionsSeed(weaponSeed);
-//        sword.UpdateMesh(_swordMesh);
-//        sword.UpdatePoints(_points);
-//
-//        mace.SetDimensionsSeed(weaponSeed);
-//        mace.UpdateMesh(_maceMesh);
-//        mace.UpdatePoints(_points2);
+        for (var i = 0; i < _weapons.Length; i++)
+        {
+            sword.SetDimensionsSeed(weaponSeed + i);
+            sword.UpdateDimensionsMods(dimensionModifiers);
+            sword.UpdateMesh(_weaponMeshes[i]);
+        }
     }
+}
+
+[Serializable]
+public struct DimensionModifier
+{
+    // Implementation to be handled by individual template
+    public string name;
+    public float scale;
+    public float heightScale;
+    public float widthScale;
+    public float depthScale;
 }
 
 
@@ -187,6 +180,16 @@ public class SwordTemplate : WeaponTemplate
         _depth = (float) rand.NormalValue(depth);
         _heightInnerRatio = (float) rand.NormalValue(heightInnerRatio);
         _widthInnerRatio = (float) rand.NormalValue(depthInnerRatio);
+    }
+
+    public void UpdateDimensionsMods(DimensionModifier[] mods)
+    {
+        foreach (var mod in mods)
+        {
+            _height *= mod.scale * mod.heightScale;
+            _depth *= mod.scale * mod.depthScale;
+            _width *= mod.scale * mod.widthScale;
+        }
     }
 
     public override Vector3[] GetVertices()
@@ -386,5 +389,15 @@ public class MaceTemplate : WeaponTemplate
         _spikeHeightRatio = (float) rand.NormalValue(spikeHeightRatio);
         _spikeWidthRatio = (float) rand.NormalValue(spikeWidthRatio);
         _spikeDepthRatio = (float) rand.NormalValue(spikeDepthRatio);
+    }
+    
+    public void UpdateDimensionsMods(DimensionModifier[] mods)
+    {
+        foreach (var mod in mods)
+        {
+            _height *= mod.scale * mod.heightScale;
+            _depth *= mod.scale * mod.depthScale;
+            _width *= mod.scale * mod.widthScale;
+        }
     }
 }
