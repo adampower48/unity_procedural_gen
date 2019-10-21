@@ -23,7 +23,7 @@ public class WeaponGen : MonoBehaviour
     private GameObject _maceGo;
     private Mesh _maceMesh;
 
-    private WeaponTemplate[] _weapons;
+    private GameObject[] _weapons;
     private Mesh[] _weaponMeshes;
 
     public int weaponSeed;
@@ -32,30 +32,39 @@ public class WeaponGen : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        sword.SetDimensionsSeed(weaponSeed);
-        _swordGo = sword.CreateObject();
-        _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
-        _points = sword.DrawPoints(point, _swordGo);
+        // Create 5x5 grid of weapons
+        _weapons = new GameObject[25];
+        for (int i = 0; i < _weapons.Length; i++)
+        {
+            mace.SetDimensionsSeed(weaponSeed + i);
+            var pos = (i % 5) * 2 * Vector3.right + (i / 5) * 2 * Vector3.forward;
+            _weapons[i] = mace.CreateObject(pos);
+        }
 
-
-        mace.SetDimensionsSeed(weaponSeed);
-        _maceGo = mace.CreateObject();
-        _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
-        _points2 = mace.DrawPoints(point, _maceGo);
-
-        _maceGo.transform.position += Vector3.right * 2;
+//        sword.SetDimensionsSeed(weaponSeed);
+//        _swordGo = sword.CreateObject();
+//        _swordMesh = _swordGo.GetComponent<MeshFilter>().mesh;
+//        _points = sword.DrawPoints(point, _swordGo);
+//
+//
+//        mace.SetDimensionsSeed(weaponSeed);
+//        _maceGo = mace.CreateObject();
+//        _maceMesh = _maceGo.GetComponent<MeshFilter>().mesh;
+//        _points2 = mace.DrawPoints(point, _maceGo);
+//
+//        _maceGo.transform.position += Vector3.right * 2;
     }
 
     // Update is called once per frame
     void Update()
     {
-        sword.SetDimensionsSeed(weaponSeed);
-        sword.UpdateMesh(_swordMesh);
-        sword.UpdatePoints(_points);
-
-        mace.SetDimensionsSeed(weaponSeed);
-        mace.UpdateMesh(_maceMesh);
-        mace.UpdatePoints(_points2);
+//        sword.SetDimensionsSeed(weaponSeed);
+//        sword.UpdateMesh(_swordMesh);
+//        sword.UpdatePoints(_points);
+//
+//        mace.SetDimensionsSeed(weaponSeed);
+//        mace.UpdateMesh(_maceMesh);
+//        mace.UpdatePoints(_points2);
     }
 }
 
@@ -98,6 +107,13 @@ public abstract class WeaponTemplate
         return gameObject;
     }
 
+    public virtual GameObject CreateObject(Vector3 pos)
+    {
+        var obj = CreateObject();
+        obj.transform.position = pos;
+        return obj;
+    }
+
     public virtual void UpdateMesh(Mesh mesh)
     {
         _compactVertices = GetVertices();
@@ -138,12 +154,14 @@ public class SwordTemplate : WeaponTemplate
     public NormalRange height;
     public NormalRange width;
     public NormalRange depth;
+    public NormalRange heightInnerRatio;
+    public NormalRange depthInnerRatio;
 
     private float _height;
     private float _depth;
     private float _width;
-    [Range(0, 1)] public float heightInnerRatio;
-    [Range(0, 1)] public float widthInnerRatio;
+    private float _heightInnerRatio;
+    private float _widthInnerRatio;
 
     public Material defaultMaterial;
 
@@ -167,8 +185,8 @@ public class SwordTemplate : WeaponTemplate
         _height = (float) rand.NormalValue(height);
         _width = (float) rand.NormalValue(width);
         _depth = (float) rand.NormalValue(depth);
-        heightInnerRatio = rand.FloatRange(0, 1);
-        widthInnerRatio = rand.FloatRange(0, 1);
+        _heightInnerRatio = (float) rand.NormalValue(heightInnerRatio);
+        _widthInnerRatio = (float) rand.NormalValue(depthInnerRatio);
     }
 
     public override Vector3[] GetVertices()
@@ -182,9 +200,9 @@ public class SwordTemplate : WeaponTemplate
         var back = Vector3.back * (_depth / 2);
         var up = Vector3.up * _height;
 
-        var leftInner = left * widthInnerRatio;
-        var rightInner = right * widthInnerRatio;
-        var upInner = up * heightInnerRatio;
+        var leftInner = left * _widthInnerRatio;
+        var rightInner = right * _widthInnerRatio;
+        var upInner = up * _heightInnerRatio;
 
 
         vertices[0] = Vector3.zero; // origin
@@ -245,14 +263,17 @@ public class MaceTemplate : WeaponTemplate
     public NormalRange height;
     public NormalRange width;
     public NormalRange depth;
-    
-    
+    public NormalRange spikeHeightRatio;
+    public NormalRange spikeWidthRatio;
+    public NormalRange spikeDepthRatio;
+
+
     private float _height;
     private float _width;
     private float _depth;
-    public float spikeHeightRatio;
-    public float spikeWidthRatio;
-    public float spikeDepthRatio;
+    private float _spikeHeightRatio;
+    private float _spikeWidthRatio;
+    private float _spikeDepthRatio;
 
     private const int NumFaces = 30;
 
@@ -272,11 +293,11 @@ public class MaceTemplate : WeaponTemplate
         var back = Vector3.back * (_depth / 2);
         var up = Vector3.up * _height;
 
-        var leftInner = left * spikeWidthRatio;
-        var rightInner = right * spikeWidthRatio;
-        var forwardInner = forward * spikeDepthRatio;
-        var backInner = back * spikeDepthRatio;
-        var upInner = up * spikeHeightRatio;
+        var leftInner = left * _spikeWidthRatio;
+        var rightInner = right * _spikeWidthRatio;
+        var forwardInner = forward * _spikeDepthRatio;
+        var backInner = back * _spikeDepthRatio;
+        var upInner = up * _spikeHeightRatio;
 
         // Origin
         vertices[0] = Vector3.zero;
@@ -362,8 +383,8 @@ public class MaceTemplate : WeaponTemplate
         _height = (float) rand.NormalValue(height);
         _width = (float) rand.NormalValue(width);
         _depth = (float) rand.NormalValue(depth);
-        spikeHeightRatio = rand.FloatRange(0.2f, 1);
-        spikeWidthRatio = rand.FloatRange(0.2f, 1);
-        spikeDepthRatio = rand.FloatRange(0.2f, 1);
+        _spikeHeightRatio = (float) rand.NormalValue(spikeHeightRatio);
+        _spikeWidthRatio = (float) rand.NormalValue(spikeWidthRatio);
+        _spikeDepthRatio = (float) rand.NormalValue(spikeDepthRatio);
     }
 }
