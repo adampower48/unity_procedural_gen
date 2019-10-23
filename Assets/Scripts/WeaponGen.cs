@@ -33,7 +33,7 @@ public class WeaponGen : MonoBehaviour
         {
             sword.SetDimensionsSeed(weaponSeed + i);
             sword.UpdateDimensionsMods(dimensionModifiers);
-            sword.UpdateMaterialMods(materialModifiers.OrderBy(x => Random.value).Take(2).ToArray());
+            sword.SetMaterialModsSeed(materialModifiers, weaponSeed + i, 2);
             var pos = (i % 5) * 2 * Vector3.right + (i / 5) * 2 * Vector3.forward;
             _weapons[i] = sword.CreateObject(pos);
             _weaponMeshes[i] = _weapons[i].GetComponent<MeshFilter>().mesh;
@@ -86,17 +86,32 @@ public abstract class WeaponTemplate
 
     public abstract void SetDimensionsSeed(int seed);
 
+    public virtual void SetMaterialModsSeed(MaterialModifier[] mods, int seed, int maxMods)
+    {
+        var rand = new HelperRandom(seed);
+        var mats = mods.OrderBy(x => rand.Double()).Take(rand.IntRange(0, maxMods + 1)).ToArray();
+        UpdateMaterialMods(mats);
+    }
 
     public virtual void UpdateMaterialMods(MaterialModifier[] mods)
     {
         // Blends all materials together
-        
+
         if (!_material)
             _material = new Material(Material);
 
-        _material.Lerp(Material,
-            Helpers.MaterialAverage(mods.Select(mod => mod.material).ToArray()),
-            0.5f);
+        if (mods.Length > 0)
+        {
+            _material.Lerp(Material,
+                Helpers.MaterialAverage(mods.Select(mod => mod.material).ToArray()),
+                0.5f);
+        }
+        else
+        {
+            _material.CopyPropertiesFromMaterial(Material);
+        }
+
+            
     }
 
     public virtual GameObject CreateObject()

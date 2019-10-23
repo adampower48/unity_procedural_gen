@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -64,12 +65,9 @@ public class ItemGen : MonoBehaviour
 
         // Modifiers
         var numWeaponMods = Random.Range(0, Mathf.Min(maxNumWeaponModifiers, weaponModifiers.Length + 1));
-        var weapMods = new WeaponModifier[numWeaponMods];
-        for (var i = 0; i < numWeaponMods; i++)
-        {
-            // todo: dont pick duplicates, dont pick opposites (eg dull + sharp), might need to iteratively reduce mod pool
-            weapMods[i] = weaponModifiers[Random.Range(0, weaponModifiers.Length)];
-        }
+        
+        // todo: dont pick opposites (eg dull + sharp)
+        var weapMods = weaponModifiers.OrderBy(x => Random.value).Take(numWeaponMods).ToArray();
 
         return new Weapon(pre, suf, type, weapMods);
     }
