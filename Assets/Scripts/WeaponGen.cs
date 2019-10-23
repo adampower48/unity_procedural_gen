@@ -21,6 +21,7 @@ public class WeaponGen : MonoBehaviour
 
     public int weaponSeed;
     public DimensionModifier[] dimensionModifiers;
+    public MaterialModifier[] materialModifiers;
 
     // Start is called before the first frame update
     void Start()
@@ -32,6 +33,7 @@ public class WeaponGen : MonoBehaviour
         {
             sword.SetDimensionsSeed(weaponSeed + i);
             sword.UpdateDimensionsMods(dimensionModifiers);
+            sword.UpdateMaterialMods(materialModifiers.OrderBy(x => Random.value).Take(2).ToArray());
             var pos = (i % 5) * 2 * Vector3.right + (i / 5) * 2 * Vector3.forward;
             _weapons[i] = sword.CreateObject(pos);
             _weaponMeshes[i] = _weapons[i].GetComponent<MeshFilter>().mesh;
@@ -61,6 +63,13 @@ public struct DimensionModifier
     public float depthScale;
 }
 
+[Serializable]
+public struct MaterialModifier
+{
+    public string name;
+    public Material material;
+}
+
 
 public abstract class WeaponTemplate
 {
@@ -69,12 +78,26 @@ public abstract class WeaponTemplate
 
     private Vector3[] _compactVertices;
     private int[] _compactTriangles;
+    private Material _material;
 
     public abstract Vector3[] GetVertices();
 
     public abstract int[] GetTriangles();
 
     public abstract void SetDimensionsSeed(int seed);
+
+
+    public virtual void UpdateMaterialMods(MaterialModifier[] mods)
+    {
+        // Blends all materials together
+        
+        if (!_material)
+            _material = new Material(Material);
+
+        _material.Lerp(Material,
+            Helpers.MaterialAverage(mods.Select(mod => mod.material).ToArray()),
+            0.5f);
+    }
 
     public virtual GameObject CreateObject()
     {
@@ -95,7 +118,7 @@ public abstract class WeaponTemplate
 
         // Assign mesh
         gameObject.GetComponent<MeshFilter>().mesh = mesh;
-        gameObject.GetComponent<MeshRenderer>().material = Material;
+        gameObject.GetComponent<MeshRenderer>().material.CopyPropertiesFromMaterial(_material);
 
         return gameObject;
     }
@@ -390,7 +413,7 @@ public class MaceTemplate : WeaponTemplate
         _spikeWidthRatio = (float) rand.NormalValue(spikeWidthRatio);
         _spikeDepthRatio = (float) rand.NormalValue(spikeDepthRatio);
     }
-    
+
     public void UpdateDimensionsMods(DimensionModifier[] mods)
     {
         foreach (var mod in mods)

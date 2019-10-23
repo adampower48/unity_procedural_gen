@@ -80,6 +80,19 @@ public static class Helpers
             triangles = newTris
         };
     }
+
+    public static Material MaterialAverage(Material[] mats)
+    {
+        // Blends materials together
+
+        var baseMat = new Material(mats[0]);
+        for (var i = 1; i < mats.Length; i++)
+        {
+            baseMat.Lerp(baseMat, mats[i], (float) i / (i + 1));
+        }
+
+        return baseMat;
+    }
 }
 
 public class HelperRandom
@@ -121,7 +134,7 @@ public class HelperRandom
         // Basic form
         var z1 = Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2);
 //        var z2 = Math.Sqrt(-2 * Math.Log(u1)) * Math.Sin(2 * Math.PI * u2); // Second value can be generated
-        
+
         return z1 * std + mean;
     }
 
