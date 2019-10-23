@@ -116,12 +116,12 @@ public class HelperRandom
 
     public float FloatRange(float min, float max)
     {
-        return (float) _rand.NextDouble() * (max - min) + min;
+        return (float) (_rand.NextDouble() * (max - min) + min);
     }
 
     public int IntRange(int min, int max)
     {
-        return (int) _rand.NextDouble() * (max - min) + min;
+        return (int) (_rand.NextDouble() * (max - min) + min);
     }
 
     public double NormalValue(double mean, double std)
@@ -141,6 +141,16 @@ public class HelperRandom
     public double NormalValue(NormalRange range)
     {
         return Helpers.Clip(NormalValue(range.mean, range.std), range.min, range.max);
+    }
+
+    public double Double()
+    {
+        return _rand.NextDouble();
+    }
+
+    public float Float()
+    {
+        return (float) _rand.NextDouble();
     }
 }
 
