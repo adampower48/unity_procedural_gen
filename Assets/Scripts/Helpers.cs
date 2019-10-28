@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public static class Helpers
@@ -93,6 +95,11 @@ public static class Helpers
 
         return baseMat;
     }
+
+    public static float AnimationInverseLerp(float a, float b, float t, AnimationCurve curve)
+    {
+        return curve.Evaluate(Mathf.InverseLerp(a, b, t));
+    }
 }
 
 public class HelperRandom
@@ -161,4 +168,53 @@ public struct NormalRange
     public double max;
     public double mean;
     [Min(0)] public double std;
+}
+
+
+[Serializable]
+public struct ColorPoint
+{
+    public float point;
+    public Color color;
+}
+
+[Serializable]
+public class ColorBar
+{
+    // Represents a smooth linear color scale
+
+    public ColorPoint[] colors;
+
+    public ColorBar(ColorPoint[] colorPoints)
+    {
+        colors = colorPoints.OrderBy(c => c.point).ToArray();
+    }
+
+    public Color GetColorAt(float val)
+    {
+        // Linearly Lerps between 2 nearest colours. todo: check if val is valid.
+
+        var i = 0;
+        while ((i < colors.Length) & (val > colors[i].point)) i++;
+
+        if (i == 0) return colors[0].color;
+
+        return Color.Lerp(colors[i - 1].color, colors[i].color,
+            Mathf.InverseLerp(colors[i - 1].point, colors[i].point, val)
+        );
+    }
+
+    public Color GetColorAt(float val, AnimationCurve curve)
+    {
+        // Lerps between 2 nearest colours with provided curve
+
+        var i = 0;
+        while ((i < colors.Length) & (val > colors[i].point)) i++;
+
+        if (i == 0) return colors[0].color;
+
+        return Color.Lerp(colors[i - 1].color, colors[i].color,
+            Helpers.AnimationInverseLerp(colors[i - 1].point, colors[i].point, val, curve)
+        );
+    }
 }
