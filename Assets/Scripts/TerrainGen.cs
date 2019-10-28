@@ -5,54 +5,109 @@ using System.Linq;
 using System;
 using Random = UnityEngine.Random;
 
-[Serializable]
-public class ColorRange
-{
-    public float maxVal;
-    public Color color;
-}
-
 public class TerrainGen : MonoBehaviour
 {
-    public MeshFilter meshFilter;
-    public MeshRenderer meshRenderer;
-
     public float heightScale;
-    public int terrainLength;
-    public int terrainWidth;
-
-
-    public int octaves;
+    public int chunkLength;
+    public int chunkWidth;
+    public int numChunksX;
+    public int numChunksY;
     public int randomSeed;
-
     public ColorBar colorBar;
     public AnimationCurve colorCurve;
-
-    private Texture2D _meshTexture;
-
-    private Vector2[] _octaveOffsets;
     public Biome[] biomes;
 
-    void Start()
+    private GameObject[] _chunks;
+    private MeshFilter[] _meshFilters;
+    private MeshRenderer[] _meshRenderers;
+    private Texture2D[] _meshTextures;
+    private Material _meshMaterial;
+    private const int NumOctaves = 10;
+    private Vector2[] _octaveOffsets;
+    private float _minHeight;
+    private float _maxHeight;
+
+
+    private void Start()
     {
+        _meshMaterial = new Material(Shader.Find("Standard"));
+        _minHeight = float.MaxValue;
+        _maxHeight = float.MinValue;
+
+        CreateChunks();
+
         Random.InitState(randomSeed);
-        var heights = GenerateHeightMap(terrainLength, terrainWidth);
-        var meshData = MeshGen.GenerateTerrainMesh(heights, heightScale);
-        _meshTexture = TextureFromHeightMap(heights);
-        DrawMesh(meshData, _meshTexture);
+        CreateOctaveOffsets(NumOctaves);
+
+
+        // Generate height maps
+        var heights = new float[numChunksX * numChunksY][,];
+        for (var i = 0; i < numChunksY; i++)
+        {
+            for (var j = 0; j < numChunksX; j++)
+            {
+                _chunks[i * numChunksY + j].transform.position =
+                    new Vector3(j * (chunkWidth - 1), 0, i * (chunkLength - 1));
+                heights[i * numChunksY + j] =
+                    GenerateHeightMap(chunkLength, chunkWidth, i * (chunkWidth - 1), j * (chunkLength - 1));
+            }
+        }
+
+        NormaliseHeightMaps(heights);
+
+        // Create Meshes and Textures
+        _meshTextures = new Texture2D[numChunksX * numChunksY];
+        for (var i = 0; i < numChunksX * numChunksY; i++)
+        {
+            var meshData = MeshGen.GenerateTerrainMesh(heights[i], heightScale);
+            _meshTextures[i] = TextureFromHeightMap(heights[i]);
+            DrawMeshes(meshData, _meshTextures[i], i);
+        }
     }
 
-    void Update()
+    private void Update()
     {
         Random.InitState(randomSeed);
-        var heights = GenerateHeightMap(terrainLength, terrainWidth);
-        var meshData = MeshGen.GenerateTerrainMesh(heights, heightScale);
-        _meshTexture = UpdateTextureFromHeightMap(heights, _meshTexture);
-        UpdateMesh(meshData, _meshTexture);
+        CreateOctaveOffsets(NumOctaves);
+
+        // Generate height maps
+        var heights = new float[numChunksX * numChunksY][,];
+        for (var i = 0; i < numChunksY; i++)
+        {
+            for (var j = 0; j < numChunksX; j++)
+            {
+                heights[i * numChunksY + j] =
+                    GenerateHeightMap(chunkLength, chunkWidth, i * (chunkWidth - 1), j * (chunkLength - 1));
+            }
+        }
+
+        NormaliseHeightMaps(heights);
+
+        // Create Meshes and Textures
+        for (var i = 0; i < numChunksX * numChunksY; i++)
+        {
+            var meshData = MeshGen.GenerateTerrainMesh(heights[i], heightScale);
+            _meshTextures[i] = UpdateTextureFromHeightMap(heights[i], _meshTextures[i]);
+            UpdateMeshes(meshData, _meshTextures[i], i);
+        }
     }
 
+    private void CreateChunks()
+    {
+        _chunks = new GameObject[numChunksX * numChunksY];
+        _meshFilters = new MeshFilter[numChunksX * numChunksY];
+        _meshRenderers = new MeshRenderer[numChunksX * numChunksY];
 
-    float[,] GenerateHeightMap(int height, int width)
+        for (var i = 0; i < numChunksX * numChunksY; i++)
+        {
+            _chunks[i] = new GameObject("Mesh " + i);
+            _meshFilters[i] = _chunks[i].AddComponent<MeshFilter>();
+            _meshRenderers[i] = _chunks[i].AddComponent<MeshRenderer>();
+            _meshRenderers[i].sharedMaterial = new Material(_meshMaterial);
+        }
+    }
+
+    private void CreateOctaveOffsets(int octaves)
     {
         _octaveOffsets = new Vector2[octaves];
         for (var i = 0; i < octaves; i++)
@@ -60,42 +115,48 @@ public class TerrainGen : MonoBehaviour
             _octaveOffsets[i] = new Vector2(Random.Range(-10000, 10000),
                 Random.Range(-10000, 10000));
         }
+    }
 
-
+    private float[,] GenerateHeightMap(int height, int width, int chunkOffsetX, int chunkOffsetY)
+    {
         var heights = new float[height, width];
-
-
-        var maxHeight = float.MinValue;
-        var minHeight = float.MaxValue;
         for (var i = 0; i < height; i++)
         {
             for (var j = 0; j < width; j++)
             {
-                var noiseHeight = GetPerlinAt(i, j, biomes[0]);
+                var noiseHeight = GetPerlinAt(chunkOffsetY + i, chunkOffsetX + j, biomes[0]);
 
                 // Store max/min values
-                if (noiseHeight > maxHeight) maxHeight = noiseHeight;
-                else if (noiseHeight < minHeight) minHeight = noiseHeight;
+                if (noiseHeight > _maxHeight) _maxHeight = noiseHeight;
+                else if (noiseHeight < _minHeight) _minHeight = noiseHeight;
 
                 heights[i, j] = noiseHeight;
-            }
-        }
-
-
-        // Normalize in range [0, 1]
-        for (var i = 0; i < height; i++)
-        {
-            for (var j = 0; j < width; j++)
-            {
-                heights[i, j] = Mathf.InverseLerp(minHeight, maxHeight, heights[i, j]);
-//                heights[i, j] = Mathf.Max(new[] {heights[i, j], colRanges[0].maxVal}); // Flatten water level
             }
         }
 
         return heights;
     }
 
-    Color[] GenerateColorMap(float[,] heightMap)
+    private void NormaliseHeightMaps(IEnumerable<float[,]> heightMaps)
+    {
+        // Normalize in range [0, 1]
+        foreach (var heightMap in heightMaps)
+        {
+            var height = heightMap.GetLength(0);
+            var width = heightMap.GetLength(1);
+
+            for (var i = 0; i < height; i++)
+            {
+                for (var j = 0; j < width; j++)
+                {
+                    heightMap[i, j] = Mathf.InverseLerp(_minHeight, _maxHeight, heightMap[i, j]);
+//                heights[i, j] = Mathf.Max(new[] {heights[i, j], colRanges[0].maxVal}); // Flatten water level
+                }
+            }
+        }
+    }
+
+    private Color[] GenerateColorMap(float[,] heightMap)
     {
         var height = heightMap.GetLength(0);
         var width = heightMap.GetLength(1);
@@ -112,7 +173,7 @@ public class TerrainGen : MonoBehaviour
         return terrainColors;
     }
 
-    Texture2D TextureFromHeightMap(float[,] heightMap)
+    private Texture2D TextureFromHeightMap(float[,] heightMap)
     {
         var height = heightMap.GetLength(0);
         var width = heightMap.GetLength(1);
@@ -129,7 +190,7 @@ public class TerrainGen : MonoBehaviour
         return tex;
     }
 
-    Texture2D UpdateTextureFromHeightMap(float[,] heightMap, Texture2D tex)
+    private Texture2D UpdateTextureFromHeightMap(float[,] heightMap, Texture2D tex)
     {
         var colors = GenerateColorMap(heightMap);
         tex.SetPixels(colors);
@@ -138,19 +199,21 @@ public class TerrainGen : MonoBehaviour
         return tex;
     }
 
-    public void DrawMesh(MeshData meshData, Texture2D texture)
+
+    public void DrawMeshes(MeshData meshData, Texture2D texture, int idx)
     {
-        meshFilter.sharedMesh = meshData.CreateMesh();
-        meshRenderer.sharedMaterial.mainTexture = texture;
+        _meshFilters[idx].sharedMesh = meshData.CreateMesh();
+        _meshRenderers[idx].sharedMaterial.mainTexture = texture;
     }
 
-    public void UpdateMesh(MeshData meshData, Texture2D texture)
+
+    public void UpdateMeshes(MeshData meshData, Texture2D texture, int idx)
     {
-        meshFilter.sharedMesh = meshData.UpdateMesh(meshFilter.sharedMesh);
-        meshRenderer.sharedMaterial.mainTexture = texture;
+        _meshFilters[idx].sharedMesh = meshData.UpdateMesh(_meshFilters[idx].sharedMesh);
+        _meshRenderers[idx].sharedMaterial.mainTexture = texture;
     }
 
-    float GetPerlinAt(int x, int y, Biome biome)
+    private float GetPerlinAt(int x, int y, Biome biome)
     {
         // Calculate value at this position
         float amplitude = 1;
@@ -221,7 +284,7 @@ public class MeshData
     public int[] triangles;
     public Vector2[] uvs;
 
-    int _triangleIndex; // keeps track of next triangle index
+    private int _triangleIndex; // keeps track of next triangle index
 
     public MeshData(int width, int height)
     {

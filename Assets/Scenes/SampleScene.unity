@@ -317,12 +317,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8216a4cd5ac1ae74788a36f088d3de9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshFilter: {fileID: 370376377}
-  meshRenderer: {fileID: 370376376}
   heightScale: 30
-  terrainLength: 200
-  terrainWidth: 200
-  octaves: 5
+  chunkLength: 200
+  chunkWidth: 200
+  numChunksX: 5
+  numChunksY: 5
   randomSeed: 0
   colorBar:
     colors:
