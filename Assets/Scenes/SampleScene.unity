@@ -144,7 +144,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 181566323}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86340064e3313aa43a2fca587b086150, type: 3}
   m_Name: 
@@ -199,9 +199,18 @@ MonoBehaviour:
     attackSpeed: 1.3
     baseDamage: 5
   weaponModifiers:
-  - name: 
-    attackSpeedMulti: 0
-    baseDamageMulti: 0
+  - name: Fast
+    attackSpeedMulti: 1.25
+    baseDamageMulti: 1
+  - name: Slow
+    attackSpeedMulti: 0.75
+    baseDamageMulti: 1
+  - name: Sharp
+    attackSpeedMulti: 1
+    baseDamageMulti: 1.25
+  - name: Dull
+    attackSpeedMulti: 1
+    baseDamageMulti: 0.75
   maxNumWeaponModifiers: 4
 --- !u!4 &181566325
 Transform:
@@ -303,7 +312,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 370376373}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8216a4cd5ac1ae74788a36f088d3de9e, type: 3}
   m_Name: 
@@ -313,55 +322,85 @@ MonoBehaviour:
   heightScale: 30
   terrainLength: 200
   terrainWidth: 200
-  noiseScale: 75
   octaves: 5
-  persistance: 0.75
-  lacunarity: 1.5
   randomSeed: 0
-  heightCurve:
+  colorBar:
+    colors:
+    - point: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - point: 0.2
+      color: {r: 0.14684942, g: 0.42648563, b: 0.9433962, a: 0}
+    - point: 0.3
+      color: {r: 1, g: 0.9848851, b: 0.4669811, a: 0}
+    - point: 0.5
+      color: {r: 0.049714144, g: 0.754717, b: 0, a: 0}
+    - point: 0.8
+      color: {r: 0.5660378, g: 0.39308932, b: 0.2803489, a: 0}
+    - point: 1
+      color: {r: 1, g: 1, b: 1, a: 0}
+  colorCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.004699707
-      inSlope: 0.028898057
-      outSlope: 0.028898057
-      tangentMode: 34
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.33333334
+      outWeight: 0
     - serializedVersion: 3
-      time: 0.30112192
-      value: 0.013401546
-      inSlope: 0.1092537
-      outSlope: 0.1092537
+      time: 0.49999687
+      value: 0.4999953
+      inSlope: 3.2156837
+      outSlope: 3.2156837
       tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334
-      outWeight: 0.07216461
+      outWeight: 0.049463145
     - serializedVersion: 3
       time: 1
-      value: 1.0046997
-      inSlope: 1.4184136
-      outSlope: 1.4184136
-      tangentMode: 34
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  colRanges:
-  - maxVal: 0.2
-    color: {r: 0.14684942, g: 0.42648563, b: 0.9433962, a: 0}
-  - maxVal: 0.3
-    color: {r: 1, g: 0.9848851, b: 0.4669811, a: 0}
-  - maxVal: 0.5
-    color: {r: 0.049714144, g: 0.754717, b: 0, a: 0}
-  - maxVal: 0.8
-    color: {r: 0.5660378, g: 0.39308932, b: 0.2803489, a: 0}
-  - maxVal: 1
-    color: {r: 1, g: 1, b: 1, a: 0}
+  biomes:
+  - name: Land
+    octaves: 5
+    noiseScale: 75
+    lacunarity: 1.5
+    persistence: 0.75
+    heightCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
 --- !u!1 &561392148
 GameObject:
   m_ObjectHideFlags: 0
@@ -386,7 +425,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 561392148}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 665760a712834004a90fe40d0c5062d7, type: 3}
   m_Name: 
@@ -451,7 +490,7 @@ MonoBehaviour:
       mean: 0.5
       std: 0.2
     defaultMaterial: {fileID: 2100000, guid: 07bfe8df0303bd64baa816e4e3a82e79, type: 2}
-  weaponSeed: 0
+  weaponSeed: 1
   dimensionModifiers:
   - name: Heavy
     scale: 2
@@ -466,12 +505,16 @@ MonoBehaviour:
   materialModifiers:
   - name: Fiery
     material: {fileID: 2100000, guid: 9b80d33b4703b644aa436df5712fce82, type: 2}
+    weight: 0
   - name: Watery
     material: {fileID: 2100000, guid: 1f85fcad53d082c4ca80bfe1ab8210f8, type: 2}
+    weight: 0
   - name: Earthy
     material: {fileID: 2100000, guid: f2a6a75af0b10b949b7397d29285ed13, type: 2}
+    weight: 0
   - name: Airy
     material: {fileID: 2100000, guid: f8152331aaaa6cf4d898d10f4dc499d0, type: 2}
+    weight: 0
 --- !u!4 &561392150
 Transform:
   m_ObjectHideFlags: 0
@@ -736,8 +779,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1864908451}
-  m_LocalRotation: {x: 0.18081018, y: -0.002345413, z: -0.0005119508, w: 0.98351514}
-  m_LocalPosition: {x: 0.9315136, y: 2.7858462, z: -3.4483137}
+  m_LocalRotation: {x: 0.3469309, y: -0.013696611, z: 0.003127012, w: 0.93778545}
+  m_LocalPosition: {x: 104.09552, y: 152.22081, z: -60.52597}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

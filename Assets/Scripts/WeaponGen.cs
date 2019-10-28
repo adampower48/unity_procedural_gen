@@ -31,11 +31,11 @@ public class WeaponGen : MonoBehaviour
         _weaponMeshes = new Mesh[25];
         for (var i = 0; i < _weapons.Length; i++)
         {
-            sword.SetDimensionsSeed(weaponSeed + i);
-            sword.UpdateDimensionsMods(dimensionModifiers);
-            sword.SetMaterialModsSeed(materialModifiers, weaponSeed + i, 2);
+            mace.SetDimensionsSeed(weaponSeed + i);
+            mace.UpdateDimensionsMods(dimensionModifiers);
+            mace.SetMaterialModsSeed(materialModifiers, weaponSeed + i, 2);
             var pos = (i % 5) * 2 * Vector3.right + (i / 5) * 2 * Vector3.forward;
-            _weapons[i] = sword.CreateObject(pos);
+            _weapons[i] = mace.CreateObject(pos);
             _weaponMeshes[i] = _weapons[i].GetComponent<MeshFilter>().mesh;
         }
     }
@@ -45,9 +45,9 @@ public class WeaponGen : MonoBehaviour
     {
         for (var i = 0; i < _weapons.Length; i++)
         {
-            sword.SetDimensionsSeed(weaponSeed + i);
-            sword.UpdateDimensionsMods(dimensionModifiers);
-            sword.UpdateMesh(_weaponMeshes[i]);
+            mace.SetDimensionsSeed(weaponSeed + i);
+            mace.UpdateDimensionsMods(dimensionModifiers);
+            mace.UpdateMesh(_weaponMeshes[i]);
         }
     }
 }
@@ -66,8 +66,11 @@ public struct DimensionModifier
 [Serializable]
 public struct MaterialModifier
 {
+    // todo: Implement weighting for materials
+    // todo: Separate MaterialModifiers for Colour, Metalic-ness, glow effect, etc.
     public string name;
     public Material material;
+    public float weight;
 }
 
 
