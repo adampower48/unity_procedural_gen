@@ -12,7 +12,7 @@ public class ColorRange
     public Color color;
 }
 
-public class MeshGenerator : MonoBehaviour
+public class TerrainGen : MonoBehaviour
 {
     public MeshFilter meshFilter;
     public MeshRenderer meshRenderer;
@@ -22,17 +22,16 @@ public class MeshGenerator : MonoBehaviour
     public int terrainWidth;
 
 
-    public float noiseScale;
     public int octaves;
-    public float persistance;
-    public float lacunarity;
     public int randomSeed;
 
-    public AnimationCurve heightCurve;
-    public ColorRange[] colRanges;
+    public ColorBar colorBar;
+    public AnimationCurve colorCurve;
 
     private Texture2D _meshTexture;
 
+    private Vector2[] _octaveOffsets;
+    public Biome[] biomes;
 
     void Start()
     {
@@ -55,10 +54,10 @@ public class MeshGenerator : MonoBehaviour
 
     float[,] GenerateHeightMap(int height, int width)
     {
-        var octaveOffsets = new Vector2[octaves];
+        _octaveOffsets = new Vector2[octaves];
         for (var i = 0; i < octaves; i++)
         {
-            octaveOffsets[i] = new Vector2(Random.Range(-10000, 10000),
+            _octaveOffsets[i] = new Vector2(Random.Range(-10000, 10000),
                 Random.Range(-10000, 10000));
         }
 
@@ -72,44 +71,24 @@ public class MeshGenerator : MonoBehaviour
         {
             for (var j = 0; j < width; j++)
             {
-                // Calculate value at this position
-                float amplitude = 1;
-                float freq = 1;
-                float noiseHeight = 0;
-                for (var k = 0; k < octaves; k++)
-                {
-                    var x = i * freq / noiseScale + octaveOffsets[k].x;
-                    var y = j * freq / noiseScale + octaveOffsets[k].y;
-
-                    var perlinVal = heightCurve.Evaluate(Mathf.PerlinNoise(x, y));
-
-                    noiseHeight += (2 * perlinVal - 1) * amplitude;
-                    amplitude *= persistance;
-                    freq *= lacunarity;
-                }
+                var noiseHeight = GetPerlinAt(i, j, biomes[0]);
 
                 // Store max/min values
                 if (noiseHeight > maxHeight) maxHeight = noiseHeight;
                 else if (noiseHeight < minHeight) minHeight = noiseHeight;
-
 
                 heights[i, j] = noiseHeight;
             }
         }
 
 
-        //Debug.Log(minHeight);
-        //Debug.Log(maxHeight);
-
         // Normalize in range [0, 1]
-
         for (var i = 0; i < height; i++)
         {
             for (var j = 0; j < width; j++)
             {
-                // heights[i, j] =  (heights[i, j] - minHeight) / (maxHeight - minHeight);
                 heights[i, j] = Mathf.InverseLerp(minHeight, maxHeight, heights[i, j]);
-                heights[i, j] = Mathf.Max(new float[] {heights[i, j], colRanges[0].maxVal}); // Flatten water level
+//                heights[i, j] = Mathf.Max(new[] {heights[i, j], colRanges[0].maxVal}); // Flatten water level
             }
         }
 
@@ -126,7 +105,7 @@ public class MeshGenerator : MonoBehaviour
         {
             for (var j = 0; j < width; j++)
             {
-                terrainColors[j * height + i] = GetTerrainColor(heightMap[i, j]);
+                terrainColors[j * height + i] = colorBar.GetColorAt(heightMap[i, j], colorCurve);
             }
         }
 
@@ -171,20 +150,37 @@ public class MeshGenerator : MonoBehaviour
         meshRenderer.sharedMaterial.mainTexture = texture;
     }
 
-    Color GetTerrainColor(float val)
+    float GetPerlinAt(int x, int y, Biome biome)
     {
-        foreach (var c in colRanges)
+        // Calculate value at this position
+        float amplitude = 1;
+        float freq = 1;
+        float noiseHeight = 0;
+        for (var k = 0; k < biome.octaves; k++)
         {
-            if (val > c.maxVal)
-            {
-                continue;
-            }
+            var i = x * freq / biome.noiseScale + _octaveOffsets[k].x;
+            var j = y * freq / biome.noiseScale + _octaveOffsets[k].y;
 
-            return c.color;
+            var perlinVal = biome.heightCurve.Evaluate(Mathf.PerlinNoise(i, j));
+
+            noiseHeight += (2 * perlinVal - 1) * amplitude;
+            amplitude *= biome.persistence;
+            freq *= biome.lacunarity;
         }
 
-        return Color.black;
+        return noiseHeight;
     }
+}
+
+[Serializable]
+public struct Biome
+{
+    public string name;
+    public int octaves;
+    public float noiseScale;
+    public float lacunarity;
+    public float persistence;
+    public AnimationCurve heightCurve;
 }
 
 
