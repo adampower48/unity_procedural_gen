@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
+using UnityEditor.PackageManager.UI;
 using Random = UnityEngine.Random;
 
 public class TerrainGen : MonoBehaviour
@@ -26,6 +28,7 @@ public class TerrainGen : MonoBehaviour
     private Vector2[] _octaveOffsets;
     private float _minHeight;
     private float _maxHeight;
+    private int _prevSeed;
 
 
     private void Start()
@@ -33,6 +36,7 @@ public class TerrainGen : MonoBehaviour
         _meshMaterial = new Material(Shader.Find("Standard"));
         _minHeight = float.MaxValue;
         _maxHeight = float.MinValue;
+        _prevSeed = randomSeed;
 
         CreateChunks();
 
@@ -67,6 +71,10 @@ public class TerrainGen : MonoBehaviour
 
     private void Update()
     {
+        // Only update if seed was changed
+        if (randomSeed == _prevSeed) return;
+        _prevSeed = randomSeed;
+
         Random.InitState(randomSeed);
         CreateOctaveOffsets(NumOctaves);
 
@@ -119,20 +127,31 @@ public class TerrainGen : MonoBehaviour
 
     private float[,] GenerateHeightMap(int height, int width, int chunkOffsetX, int chunkOffsetY)
     {
-        var heights = new float[height, width];
-        for (var i = 0; i < height; i++)
-        {
-            for (var j = 0; j < width; j++)
-            {
-                var noiseHeight = GetPerlinAt(chunkOffsetY + i, chunkOffsetX + j, biomes[0]);
+//        var heights = new float[height, width];
+//        Parallel.For(0, height,
+//            i => Parallel.For(0, width,
+//                j => heights[i, j] = GetPerlinAt(chunkOffsetY + i, chunkOffsetX + j, biomes[0])));
+        var heights = GetPerlins(chunkOffsetY, chunkOffsetX, height, width, biomes[0].octaves, biomes[0]);
 
-                // Store max/min values
-                if (noiseHeight > _maxHeight) _maxHeight = noiseHeight;
-                else if (noiseHeight < _minHeight) _minHeight = noiseHeight;
+//        for (var i = 0; i < height; i++)
+//        {
+//            for (var j = 0; j < width; j++)
+//            {
+//                var noiseHeight = GetPerlinAt(chunkOffsetY + i, chunkOffsetX + j, biomes[0]);
+//
+//                // Store max/min values
+//                if (noiseHeight > _maxHeight) _maxHeight = noiseHeight;
+//                else if (noiseHeight < _minHeight) _minHeight = noiseHeight;
+//
+//                heights[i, j] = noiseHeight;
+//            }
+//        }
 
-                heights[i, j] = noiseHeight;
-            }
-        }
+        // Store max/min values
+        var max = heights.Cast<float>().Max();
+        if (max > _maxHeight) _maxHeight = max;
+        var min = heights.Cast<float>().Min();
+        if (min < _minHeight) _minHeight = min;
 
         return heights;
     }
@@ -145,30 +164,28 @@ public class TerrainGen : MonoBehaviour
             var height = heightMap.GetLength(0);
             var width = heightMap.GetLength(1);
 
-            for (var i = 0; i < height; i++)
-            {
-                for (var j = 0; j < width; j++)
-                {
-                    heightMap[i, j] = Mathf.InverseLerp(_minHeight, _maxHeight, heightMap[i, j]);
-//                heights[i, j] = Mathf.Max(new[] {heights[i, j], colRanges[0].maxVal}); // Flatten water level
-                }
-            }
+            Parallel.For(0, height,
+                i => Parallel.For(0, width,
+                    j => heightMap[i, j] = Mathf.InverseLerp(_minHeight, _maxHeight, heightMap[i, j])));
         }
     }
 
+
     private Color[] GenerateColorMap(float[,] heightMap)
     {
+        var sampledBC = Helpers.SampleColorBar(colorBar, colorCurve, 256);
+
         var height = heightMap.GetLength(0);
         var width = heightMap.GetLength(1);
 
         var terrainColors = new Color[height * width];
-        for (var i = 0; i < height; i++)
+        Parallel.For(0, height, delegate(int i)
         {
             for (var j = 0; j < width; j++)
             {
-                terrainColors[j * height + i] = colorBar.GetColorAt(heightMap[i, j], colorCurve);
+                terrainColors[j * height + i] = Helpers.EvalSampledColorBar(sampledBC, heightMap[i, j]);
             }
-        }
+        });
 
         return terrainColors;
     }
@@ -232,6 +249,37 @@ public class TerrainGen : MonoBehaviour
         }
 
         return noiseHeight;
+    }
+
+    private float[,] GetPerlins(int x, int y, int height, int width, int octaves, Biome biome)
+    {
+        var sampledAC = Helpers.SampleAnimationCurve(biome.heightCurve, 256);
+
+        var amplitudes = new float[octaves];
+        var freqs = new float[octaves];
+        Parallel.For(0, octaves, delegate(int i)
+        {
+            amplitudes[i] = (float) Math.Pow(biome.persistence, i);
+            freqs[i] = (float) Math.Pow(biome.lacunarity, i);
+        });
+
+
+        var noiseHeights = new float[height, width];
+        Parallel.For(0, height, delegate(int i)
+        {
+            for (var j = 0; j < width; j++)
+            {
+                for (var k = 0; k < octaves; k++)
+                {
+                    var I = (x + i) * freqs[k] / biome.noiseScale + _octaveOffsets[k].x;
+                    var J = (y + j) * freqs[k] / biome.noiseScale + _octaveOffsets[k].y;
+                    var perlin = Helpers.EvalSampledAnimCurve(sampledAC, Mathf.PerlinNoise(I, J));
+                    noiseHeights[i, j] += (2 * perlin - 1) * amplitudes[k];
+                }
+            }
+        });
+
+        return noiseHeights;
     }
 }
 
