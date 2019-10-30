@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Unity.Collections;
 using UnityEngine;
 
 public static class Helpers
@@ -99,6 +100,38 @@ public static class Helpers
     public static float AnimationInverseLerp(float a, float b, float t, AnimationCurve curve)
     {
         return curve.Evaluate(Mathf.InverseLerp(a, b, t));
+    }
+
+    public static float[] SampleAnimationCurve(AnimationCurve ac, int numSamples)
+    {
+        var sampled = new float[numSamples];
+        for (var i = 0; i < numSamples; i++)
+        {
+            sampled[i] = ac.Evaluate(i / (float) (numSamples - 1));
+        }
+
+        return sampled;
+    }
+
+    public static float EvalSampledAnimCurve(float[] sampledAC, float val)
+    {
+        return sampledAC[(int) Clip(val * (sampledAC.Length - 1), 0, (sampledAC.Length - 1))];
+    }
+
+    public static Color[] SampleColorBar(ColorBar colorBar, AnimationCurve ac, int numSamples)
+    {
+        var sampled = new Color[numSamples];
+        for (var i = 0; i < numSamples; i++)
+        {
+            sampled[i] = colorBar.GetColorAt(i / (float) (numSamples - 1), ac);
+        }
+
+        return sampled;
+    }
+
+    public static Color EvalSampledColorBar(Color[] sampledCB, float val)
+    {
+        return sampledCB[(int) Clip(val * (sampledCB.Length - 1), 0, (sampledCB.Length - 1))];
     }
 }
 
